@@ -15,8 +15,5 @@ def selection_repertoire():
     return repertoire
 
 if __name__ == "__main__":
-    app = QApplication(sys.argv)
-    rep = selection_repertoire()
-    if rep:
-        print(rep)
-    sys.exit(app.exec_())
+    selection_repertoire()
+
