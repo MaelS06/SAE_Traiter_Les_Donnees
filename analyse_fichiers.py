@@ -36,14 +36,16 @@ def filtre_gros_fichiers(liste_fichiers):
 
 # --------------------------------------------------
 def ecriture_json(liste_fichiers):
-    for fichier in liste_fichiers:
-        fichier[0] = fichier[0].replace("\\", "\\\\")
-
     with open(NOM_FICHIER_JSON, "w", encoding="utf-8") as f:
         json.dump(liste_fichiers, f, indent=2)
 
 # --------------------------------------------------
 if __name__ == "__main__":
+
+    if len(sys.argv) < 2:
+        print("Usage : python analyse_fichiers.py <répertoire>")
+        sys.exit(1)
+
     repertoire = sys.argv[1]
 
     fichiers = inventaire_fichiers(repertoire)

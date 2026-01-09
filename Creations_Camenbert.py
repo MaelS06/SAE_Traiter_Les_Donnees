@@ -8,45 +8,54 @@ from PyQt5.QtChart import QChart, QChartView, QPieSeries
 from PyQt5.QtGui import QFont
 
 class Camembert:
+    """
+    Création d'un objet graphique contenant une représentation
+    statistique sous forme de camembert.
+    """
+
     def __init__(self, liste_fichiers, liste_couleurs):
         self.liste_fichiers = liste_fichiers
         self.liste_couleurs = liste_couleurs
+
     def dessine_camembert(self):
-"""
-Retourne une Widget Layout PyQt contenant un graphique circulaire type camembert.
-"""
+        """
+        Retourne un QWidget contenant un graphique circulaire type camembert.
+        """
+
         if not self.liste_fichiers:
-            raise ValueError(f"La liste doit contenir au moins 1 fichier.")
-# Création de la série de données pour le graphique
+            raise ValueError("La liste doit contenir au moins un fichier.")
+
+        # Création de la série de données
         series = QPieSeries()
         series.setLabelsVisible(True)
-        taille_totale = 0
 
-        for liste in self.liste_fichiers:
-            taille_totale += liste[1]
-# Création des différentes tranches du camembert
+        # Calcul de la taille totale
+        taille_totale = sum(fichier[1] for fichier in self.liste_fichiers)
+
+        # Police des étiquettes
         font = QFont("Arial Narrow", 12, QFont.Bold)
 
-        for path_fichier, taille_fichier in self.liste_fichiers:
-            etiquette = f"{taille_fichier // 1048576}MiB"
-            pourcentage = taille_fichier / taille_totale * 100
+        # Création des tranches
+        for index, (chemin, taille) in enumerate(self.liste_fichiers):
+            etiquette = f"{taille // 1048576} MiB"
+            pourcentage = taille / taille_totale * 100
+
             slice_ = series.append(etiquette, pourcentage)
-            slice_.setBrush(self.liste_couleurs[len(series)-1]) # Couleurs dynamiques
+
+            if index < len(self.liste_couleurs):
+                slice_.setBrush(self.liste_couleurs[index])
+
             slice_.setLabelFont(font)
-            slice_.setLabelPosition(slice_.LabelPosition.LabelOutside)
+            slice_.setLabelPosition(slice_.LabelOutside)
 
-# Affichage d'une étiquette pour les grandes tranches du camembert
-
+        # Affichage des étiquettes seulement pour les grosses tranches
         for slice_ in series.slices():
             slice_.setLabelVisible(slice_.angleSpan() > 6)
 
-# Création du graphique
-        fromage = QChart()
-        fromage.addSeries(series)
-        fromage.setTitle("Répartition des tailles des fichiers")
-        fromage.legend().hide()
+        # Création du graphique
+        chart = QChart()
+        chart.addSeries(series)
+        chart.setTitle("Répartition des tailles des fichiers")
+        chart.legend().hide()
 
-# Configuration du graphique avec QChartView
-
-        layout_fromage = QChartView(fromage)
-        return layout_fromage
+        return QChartView(chart)
