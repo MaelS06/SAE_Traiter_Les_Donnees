@@ -3,7 +3,6 @@ import json
 import random
 from PyQt5.QtWidgets import QApplication
 from PyQt5.QtGui import QColor
-import platform
 
 from Creation_Onglets import Onglets
 from Creation_Camembert import Camembert
@@ -11,69 +10,50 @@ from Creation_Legendes import Legendes
 from Creation_Boutons import Boutons
 
 NB_LEGENDES_PAR_PAGE = 25
-NOM_JSON = "resultat.json"
 
-# --------------------------------------------------
-def lecture_json():
-    with open(NOM_JSON, "r", encoding="utf-8") as f:
+def lire_json():
+    with open("resultats.json", "r", encoding="utf-8") as f:
         return json.load(f)
 
-# --------------------------------------------------
-def genere_couleurs(nb):
-    couleurs = []
-    for _ in range(nb):
-        couleurs.append(QColor(
-            random.randint(0,255),
-            random.randint(0,255),
-            random.randint(0,255)
-        ))
-    return couleurs
+def couleurs_aleatoires(n):
+    return [QColor(random.randint(0,255),
+                   random.randint(0,255),
+                   random.randint(0,255)) for _ in range(n)]
 
-# --------------------------------------------------
 def creation_script_suppression():
-    lignes = [
-        'Write-Output "Script PowerShell pour supprimer des fichiers"',
-        'Write-Output "Attention : cette suppression est définitive"',
-        '$rep = Read-Host "Confirmez la suppression (OUI)"',
-        'if ($rep -eq "OUI") {',
-        ' $conf = Read-Host "Êtes-vous vraiment sûr(e) ? (OUI)"',
-        ' if ($conf -eq "OUI") {'
-    ]
+    lignes = []
+    lignes.append('Write-Output "Script PowerShell pour supprimer des fichiers sans confirmation"')
+    lignes.append('$reponse = Read-Host "Confirmer ? (OUI)"')
+    lignes.append('if ($reponse -eq "OUI") {')
 
-    for leg in liste_legendes:
-        etats = leg.recupere_etats_case_a_cocher()
-        index = leg.num_legende_start
-
+    for page in liste_legendes:
+        etats = page.recupere_etats_case_a_cocher()
         for i, etat in enumerate(etats):
             if etat:
-                chemin = fichiers[index + i][0]
-                lignes.append(f'  Remove-Item -Path "{chemin}" -Force')
+                index = page.num_legende_start + i
+                path = liste_fichiers[index][0]
+                lignes.append(f'  Remove-Item -Path "{path}" -Force')
 
-    lignes.extend([
-        ' } else { Write-Output "Opération annulée" }',
-        '} else { Write-Output "Opération annulée" }'
-    ])
+    lignes.append('}')
 
     with open("suppression.ps1", "w", encoding="utf-8") as f:
         f.write("\n".join(lignes))
 
-# --------------------------------------------------
 if __name__ == "__main__":
+    liste_fichiers = lire_json()
+    liste_couleurs = couleurs_aleatoires(len(liste_fichiers))
+
     app = QApplication(sys.argv)
-
-    fichiers = lecture_json()
-    couleurs = genere_couleurs(len(fichiers))
-
     fenetre = Onglets()
 
-    camembert = Camembert(fichiers, couleurs)
-    fenetre.add_onglet("Camembert", camembert.dessine_camembert())
+    cam = Camembert(liste_fichiers, liste_couleurs)
+    fenetre.add_onglet("Camembert", cam.dessine_camembert())
 
     liste_legendes = []
-    for i in range(0, len(fichiers), NB_LEGENDES_PAR_PAGE):
-        leg = Legendes(fichiers, couleurs, i)
+    for i in range(0, len(liste_fichiers), NB_LEGENDES_PAR_PAGE):
+        leg = Legendes(liste_fichiers, liste_couleurs, i)
         liste_legendes.append(leg)
-        fenetre.add_onglet(f"Légende {i//NB_LEGENDES_PAR_PAGE + 1}", leg.dessine_legendes())
+        fenetre.add_onglet(f"Légende {i//25 + 1}", leg.dessine_legendes())
 
     ihm = Boutons("Répertoire de base", creation_script_suppression)
     fenetre.add_onglet("IHM", ihm.dessine_boutons())
