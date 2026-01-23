@@ -7,9 +7,9 @@ Write-Output ""
 # Configuration
 # -----------------------------------------------
 $python = "python"
-$script_selecteur = "Selection_Repertoire.py"
-$script_analyse   = "Analyse_Arborescence.py"
-$script_affichage = "Affichage_Camembert.py"
+$script_selecteur = "select_repertoire.py"
+$script_analyse   = "analyse_fichiers.py"
+$script_affichage = "Creation_Camembert.py"
 $fichier_json     = "resultat_gros_fichiers.json"
 
 # -----------------------------------------------
@@ -17,6 +17,10 @@ $fichier_json     = "resultat_gros_fichiers.json"
 # -----------------------------------------------
 Write-Output "Sélection du répertoire à analyser..."
 $rep_base = & $python $script_selecteur
+if (-not $rep_base) {
+    Write-Output "Répertoire invalide. Fin du script."
+    exit
+}
 $rep_base = $rep_base.Trim()
 
 if (-not $rep_base -or -not (Test-Path $rep_base)) {
