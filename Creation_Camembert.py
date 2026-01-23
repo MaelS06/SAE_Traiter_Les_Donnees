@@ -1,58 +1,75 @@
 #--------------------------------------------------------
-# Script : Creation_Camenbert.py
+# Script : Creation_Camembert.py
 # Destiné à la SAE 1.05 : traitement des données
-# Dev : O. ECKLE - Ver : 1.0 - Décembre 2024
+# Dev : O. ECKLE - Ver : 1.2 - Janvier 2026
 #--------------------------------------------------------
 
-from PyQt5.QtChart import QChart, QChartView, QPieSeries
+from PyQt5.QtChart import QChart, QChartView, QPieSeries, QPieSlice
 from PyQt5.QtGui import QFont
+from PyQt5.QtWidgets import QWidget, QVBoxLayout, QLabel
+from PyQt5.QtCore import Qt
 
 class Camembert:
     """
-    Création d'un objet graphique contenant une réprésentation statistique sous forme de camembert.
-    La série de données représente la liste passée dans le 1er argument.
-    Les couleurs des tranches du camembert sont celle de la liste passée en 2ème argument.
+    Création d'un objet graphique contenant une représentation
+    statistique sous forme de camembert.
     """
+
     def __init__(self, liste_fichiers, liste_couleurs):
         self.liste_fichiers = liste_fichiers
         self.liste_couleurs = liste_couleurs
 
     def dessine_camembert(self):
         """
-        Retourne une Widget Layout PyQt contenant un graphique circulaire type camembert.
+        Retourne un QWidget contenant un graphique circulaire type camembert.
         """
-        if not self.liste_fichiers:
-            raise ValueError(f"La liste doit contenir au moins 1 fichier.")
 
-        # Création de la série de données pour le graphique
+        # Si aucune donnée, retourner un widget informatif au lieu de lever une exception
+        if not self.liste_fichiers:
+            container = QWidget()
+            layout = QVBoxLayout(container)
+            label = QLabel("Aucun fichier à afficher. Exécutez d'abord l'analyse ou vérifiez le filtre de taille.")
+            label.setAlignment(Qt.AlignCenter)
+            layout.addWidget(label)
+            return container
+
+        # Création de la série de données
         series = QPieSeries()
         series.setLabelsVisible(True)
-        taille_totale = 0
-        for liste in self.liste_fichiers:
-            taille_totale += liste[1]
 
-        # Création des différentes tranches du camembert
+        # Calcul de la taille totale
+        taille_totale = sum(fichier[1] for fichier in self.liste_fichiers)
+
+        # Police des étiquettes
         font = QFont("Arial Narrow", 12, QFont.Bold)
-        for path_fichier, taille_fichier in self.liste_fichiers:
-            etiquette = f"{taille_fichier // 1048576}MiB"
-            pourcentage = taille_fichier / taille_totale * 100
-            slice_ = series.append(etiquette, pourcentage)
-            slice_.setBrush(self.liste_couleurs[len(series)-1])  # Couleurs dynamiques
-            slice_.setLabelFont(font)
-            slice_.setLabelPosition(slice_.LabelPosition.LabelOutside)
 
-        # Affichage d'une étiquette pour les grandes tranches du camembert
+        # Création des tranches
+        for index, (chemin, taille) in enumerate(self.liste_fichiers):
+            etiquette = f"{taille // 1048576} MiB"
+            # On ajoute la valeur en octets ; QPieSeries calculera automatiquement les proportions
+            slice_ = series.append(etiquette, taille)
+
+            if index < len(self.liste_couleurs):
+                slice_.setBrush(self.liste_couleurs[index])
+
+            slice_.setLabelFont(font)
+            # Position correcte de l'étiquette
+            slice_.setLabelPosition(QPieSlice.LabelOutside)
+
+        # Affichage des étiquettes seulement pour les grosses tranches
         for slice_ in series.slices():
             slice_.setLabelVisible(slice_.angleSpan() > 6)
 
-        # Création du camembert complet
-        fromage = QChart()
-        fromage.addSeries(series)
-        fromage.setTitle("Répartition des tailles des fichiers")
-        fromage.legend().hide()
+        # Création du graphique
+        chart = QChart()
+        chart.addSeries(series)
+        chart.setTitle("Répartition des tailles des fichiers")
+        chart.legend().hide()
 
-        # Configuration du graphique avec QChartView
-        layout_fromage = QChartView(fromage)
+        view = QChartView(chart)
 
-        # Retour de l'objet graphique et son layout contenant le camembert
-        return layout_fromage
+        # Conteneur QWidget attendu par Onglets.add_onglet
+        container = QWidget()
+        layout = QVBoxLayout(container)
+        layout.addWidget(view)
+        return container

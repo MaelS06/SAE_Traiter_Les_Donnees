@@ -1,7 +1,8 @@
 import sys
 import json
 import random
-from PyQt5.QtWidgets import QApplication
+import os
+from PyQt5.QtWidgets import QApplication, QMessageBox
 from PyQt5.QtGui import QColor
 
 from Creation_Onglets import Onglets
@@ -11,8 +12,8 @@ from Creation_Boutons import Boutons
 
 NB_LEGENDES_PAR_PAGE = 25
 
-def lire_json():
-    with open("resultats.json", "r", encoding="utf-8") as f:
+def lire_json(nom_fichier):
+    with open(nom_fichier, "r", encoding="utf-8") as f:
         return json.load(f)
 
 def couleurs_aleatoires(n):
@@ -20,27 +21,18 @@ def couleurs_aleatoires(n):
                    random.randint(0,255),
                    random.randint(0,255)) for _ in range(n)]
 
-def creation_script_suppression():
-    lignes = []
-    lignes.append('Write-Output "Script PowerShell pour supprimer des fichiers sans confirmation"')
-    lignes.append('$reponse = Read-Host "Confirmer ? (OUI)"')
-    lignes.append('if ($reponse -eq "OUI") {')
-
-    for page in liste_legendes:
-        etats = page.recupere_etats_case_a_cocher()
-        for i, etat in enumerate(etats):
-            if etat:
-                index = page.num_legende_start + i
-                path = liste_fichiers[index][0]
-                lignes.append(f'  Remove-Item -Path "{path}" -Force')
-
-    lignes.append('}')
-
-    with open("suppression.ps1", "w", encoding="utf-8") as f:
-        f.write("\n".join(lignes))
-
 if __name__ == "__main__":
-    liste_fichiers = lire_json()
+    if len(sys.argv) >= 2:
+        nom_fichier = sys.argv[1]
+    else:
+        nom_fichier = "resultats.json"
+
+    if not os.path.exists(nom_fichier):
+        # Si on est lancé depuis une console (ex. PowerShell), on écrit sur stdout.
+        print(f"Fichier '{nom_fichier}' introuvable. Exécutez d'abord l'analyse pour générer ce fichier.")
+        sys.exit(2)
+
+    liste_fichiers = lire_json(nom_fichier)
     liste_couleurs = couleurs_aleatoires(len(liste_fichiers))
 
     app = QApplication(sys.argv)
@@ -53,9 +45,9 @@ if __name__ == "__main__":
     for i in range(0, len(liste_fichiers), NB_LEGENDES_PAR_PAGE):
         leg = Legendes(liste_fichiers, liste_couleurs, i)
         liste_legendes.append(leg)
-        fenetre.add_onglet(f"Légende {i//25 + 1}", leg.dessine_legendes())
+        fenetre.add_onglet(f"Légende {i//NB_LEGENDES_PAR_PAGE + 1}", leg.dessine_legendes())
 
-    ihm = Boutons("Répertoire de base", creation_script_suppression)
+    ihm = Boutons(liste_fichiers)
     fenetre.add_onglet("IHM", ihm.dessine_boutons())
 
     fenetre.show()

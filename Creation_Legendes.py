@@ -10,12 +10,8 @@ from PyQt5.QtCore import Qt
 class Legendes:
     """
     Création d'un objet graphique contenant une série de lignes de légendes.
-    La série de données représente la liste passée dans le 1er argument.
-    Les couleurs des tranches du camembert sont celle de la liste passée en 2ème argument.
-    Le nombre de lignes de légendes est passé dans le 4ème argument.
-    Le numéro de la 1ère ligne de légendes pris dans la liste des données est passé dans le 3ème argument...
     """
-    def __init__(self, liste_fichiers, liste_couleurs, num_legende_start, nb_legende_par_page):
+    def __init__(self, liste_fichiers, liste_couleurs, num_legende_start, nb_legende_par_page=25):
         self.liste_fichiers = liste_fichiers
         self.liste_couleurs = liste_couleurs
         self.num_legende_start = num_legende_start
@@ -57,7 +53,7 @@ class Legendes:
             ligne_legende = QHBoxLayout()
             ligne_legende.setAlignment(Qt.AlignLeft)
             ligne_legende.setContentsMargins(5, 0, 5, 5)
-            ligne_legende.stretch(2)
+            # ligne_legende.stretch(2)
             ligne_legende.addWidget(case_a_cocher)
             ligne_legende.addWidget(rectangle_colore)
             ligne_legende.addWidget(texte_legende)
@@ -73,7 +69,7 @@ class Legendes:
         # Retour de l'objet graphique et son layout contenant 25 lignes de légendes
         return legendes
 
-    def recupere_etats_cases_a_cocher(self):
+    def recupere_etats_case_a_cocher(self):
         """
         Retourne une liste de boolean indiquant, pour cette page de légendes (cet objet), les états des cases à cocher...
         """
