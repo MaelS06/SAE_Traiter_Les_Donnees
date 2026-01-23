@@ -1,72 +1,51 @@
 Write-Output "==============================================="
-Write-Output " Suppression de fichiers volumineux"
-Write-Output " ATTENTION : SUPPRESSION DEFINITIVE"
+Write-Output " SAE 1.05 - Analyse des gros fichiers"
 Write-Output "==============================================="
 Write-Output ""
 
-$jsonFile = "resultat_gros_fichiers.json"
+# -----------------------------------------------
+# Configuration
+# -----------------------------------------------
+$python = "python"
+$script_selecteur = "Selection_Repertoire.py"
+$script_analyse   = "Analyse_Arborescence.py"
+$script_affichage = "Affichage_Camembert.py"
+$fichier_json     = "resultat_gros_fichiers.json"
 
-if (-not (Test-Path $jsonFile)) {
-    Write-Output "❌ Fichier JSON introuvable."
+# -----------------------------------------------
+# Sélection du répertoire
+# -----------------------------------------------
+Write-Output "Sélection du répertoire à analyser..."
+$rep_base = & $python $script_selecteur
+$rep_base = $rep_base.Trim()
+
+if (-not $rep_base -or -not (Test-Path $rep_base)) {
+    Write-Output "❌ Répertoire invalide. Fin du script."
     exit
 }
 
-$fichiers = Get-Content $jsonFile | ConvertFrom-Json
+Write-Output "✔ Répertoire sélectionné : $rep_base"
 
-Write-Output "Liste des fichiers détectés :"
+# -----------------------------------------------
+# Analyse de l'arborescence
+# -----------------------------------------------
 Write-Output ""
+Write-Output "Analyse en cours..."
+& $python $script_analyse $rep_base $fichier_json
 
-for ($i = 0; $i -lt $fichiers.Count; $i++) {
-    $chemin = $fichiers[$i][0]
-    $taille = [math]::Round($fichiers[$i][1] / 1MB, 2)
-    Write-Output "[$i] $chemin ($taille MiB)"
-}
-
-Write-Output ""
-Write-Output "Entrez les numéros des fichiers à supprimer"
-Write-Output "Exemple : 0,3,7"
-$selection = Read-Host "Votre sélection"
-
-if (-not $selection) {
-    Write-Output "❌ Aucune sélection."
+if (-not (Test-Path $fichier_json)) {
+    Write-Output "❌ Le fichier JSON n'a pas été créé."
     exit
 }
 
-$indexes = $selection -split "," | ForEach-Object { $_.Trim() }
+Write-Output "✔ Analyse terminée"
 
 # -----------------------------------------------
-# Double confirmation
-# -----------------------------------------------
-$reponse = Read-Host "Confirmez-vous la suppression ? (OUI)"
-if ($reponse -ne "OUI") { exit }
-
-$confirmation = Read-Host "Etes-vous bien certain(e) ? (OUI)"
-if ($confirmation -ne "OUI") { exit }
-
-# -----------------------------------------------
-# Suppression
+# Lancement de l'IHM
 # -----------------------------------------------
 Write-Output ""
-Write-Output "Suppression en cours..."
-Write-Output ""
-
-foreach ($index in $indexes) {
-
-    if ($index -match '^\d+$' -and $index -lt $fichiers.Count) {
-
-        $chemin = $fichiers[$index][0]
-
-        if (Test-Path $chemin) {
-            Remove-Item -Path $chemin -Force
-            Write-Output "✔ Supprimé : $chemin"
-        } else {
-            Write-Output "⚠ Fichier introuvable : $chemin"
-        }
-
-    } else {
-        Write-Output "⚠ Index invalide : $index"
-    }
-}
+Write-Output "Ouverture de l'interface graphique..."
+& $python $script_affichage $rep_base $fichier_json
 
 Write-Output ""
-Write-Output "Fin du script de suppression."
+Write-Output "Fin du script principal."
